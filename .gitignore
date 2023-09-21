@@ -1,2 +1,5 @@
-*
-!book/*
+/*
+!/book/
+!/book/*
+!/README.md 
+!/LICENCE.txt
