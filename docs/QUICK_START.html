@@ -199,7 +199,7 @@ this guide.</p>
 <p>Rust begins execution of the program by calling the <code>main()</code> function.
 So, the rest of the code will be inserted into this function. Let's
 first initialise a three qubit circuit:</p>
-<pre><code class="language-rust ignore">let mut circuit: Circuit = Circuit::new(3);</code></pre>
+<pre><code class="language-rust ignore">let mut circuit: Circuit = Circuit::new(3).unwrap();</code></pre>
 <p>Grover's algorithm requires that the starting state is in a 
 superposition of all basis states with equal amplitudes. This can be
 achieved by adding three Hadamard gates to each wire:</p>
@@ -277,7 +277,7 @@ dependency.</p>
 <pre><code class="language-rust ignore">use quantr::circuit::{printer::Printer, Circuit, Measurement, StandardGate};
 
 fn main() {
-    let mut circuit = Circuit::new(3);
+    let mut circuit = Circuit::new(3).unwrap();
 
     // Kick state into superposition of equal weights
     circuit
