@@ -172,7 +172,7 @@
 repository</a>. In the future, it will
 serve as extended documentation to quantr, in addition to explaining the
 theory and logic behind the crate.</p>
-<p>This documentation is for quantr-0.2.4.</p>
+<p>This documentation is for quantr-0.3.0.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="quick-start-guide"><a class="header" href="#quick-start-guide">Quick Start Guide</a></h1>
 <p>This guide walks through an implementation of Grover's algorithm using
 <a href="https://crates.io/crates/quantr">quantr</a>. It's aimed at beginners in
@@ -185,22 +185,23 @@ Book</a>. Likewise,
 offers a good explanation of Grover's. This guide does not attempt to
 explain either of these subjects in detail.</p>
 <p>The complete code that is built from following this guide is available
-at the end.</p>
+at the end. Or, the code can be found in <code>examples/grovers.rs</code>, and ran
+from the root directory with <code>cargo run --example grovers</code>.</p>
 <hr />
-<p>Open the console, and create a new Rust project by running</p>
+<p>Open the console, and create a new Rust project (known as a cargo
+package) by running</p>
 <pre><code class="language-console">cargo new grovers_example
 </code></pre>
 <p>This will create a new directory called <code>grovers_example</code> containing
 the necessary files for a Rust project. Enter this directory.</p>
-<p>Add the latest version of quantr as a dependency by running <code>cargo add quantr</code> on the console. This should add quantr below <code>[dependecies]</code> in
+<p>Add the latest version of quantr as a dependency by running <code>cargo add quantr</code> on the console. This should add quantr below <code>[d    ependecies]</code> in
 you <code>Cargo.toml</code> file. Then, run <code>cargo build</code>. This will download the
 quantr crate from <a href="https://crates.io/">crates.io</a> and make it
-accessible to your IDE.</p>
+accessible for your project. </p>
 <p>Once quantr has been installed, open <code>src/main.rs</code>. This is where the
 subsequent code will be written to implement Grover's algorithm.</p>
 <p>Add the following lines to the top of <code>main.rs</code>, and before <code>fn main()</code>:</p>
-<pre><code class="language-rust  ignore">use quantr::circuit::{Circuit, StandardGate, printer::Printer, state::ProductState, Measurement};
-use std::collections::HashMap;</code></pre>
+<pre><code class="language-rust  ignore">use quantr::{Circuit, Gate, Measurement, Printer};</code></pre>
 <p>These lines import the structs and enums that will be used throughout 
 this guide.</p>
 <p>Rust begins execution of the program by calling the <code>main()</code> function.
@@ -209,18 +210,18 @@ first initialise a three qubit circuit:</p>
 <pre><code class="language-rust ignore">let mut circuit: Circuit = Circuit::new(3).unwrap();</code></pre>
 <p>Grover's algorithm requires that the starting state is in a 
 superposition of all basis states with equal amplitudes. This can be
-achieved by adding three Hadamard gates to each wire:</p>
-<pre><code class="language-rust ignore">circuit.add_repeating_gates(StandardGate::H, vec![0, 1, 2]).unwrap();</code></pre>
-<p>The <code>vec!</code> macro is a quick way to create a vector. The <code>.unwrap()</code>
-forces the program to quit if there is an error in adding these gates,
-such as adding a gate to a non-existent wire. There are no errors in
-this example, so the method <code>.unwrap()</code> does nothing. </p>
+achieved by adding a Hadamard gate to each wire, that is to wires 0, 1
+and 2:</p>
+<pre><code class="language-rust ignore">circuit.add_repeating_gate(Gate::H, &amp;[0, 1, 2]).unwrap();</code></pre>
+<p>The <code>.unwrap()</code> forces the program to quit if there is an error in
+adding these gates, such as adding a gate to a non-existent wire. There
+are no errors in this example, so the method <code>.unwrap()</code> does nothing. </p>
 <p>Let's visualise the circuit that has been built so far (or at any other
 time throughout this guide) by adding the following:</p>
 <pre><code class="language-rust ignore">let mut printer: Printer = Printer::new(&amp;circuit);
 printer.print_diagram();</code></pre>
 <p>This will print a circuit diagram to the console. This can be seen by
-running the program, by entering <code>cargo run</code> while in the directory that
+running the program by entering <code>cargo run</code> while in the directory that
 cargo built.</p>
 <p>The next step in the algorithm requires the oracle to be defined. This
 is a function built from unitary gates that flips the sign of the state
@@ -230,23 +231,23 @@ states.</p>
 <p>This is implemented by adding a controlled-z gate targeting the 0th
 wire, with its control node placed on the 1st wire; the first and second
 wire from top to bottom in a circuit diagram respectively:</p>
-<pre><code class="language-rust ignore">circuit.add_gate(StandardGate::CZ(1), 0).unwrap();</code></pre>
+<pre><code class="language-rust ignore">circuit.add_gate(Gate::CZ(1), 0).unwrap();</code></pre>
 <p>The second argument of <code>circuit.add_gate</code> specifies which wire is the
-target, and the field of the variant <code>StandardGate::CZ</code> specifies the
+target, and the field of the variant <code>Gate::CZ</code> specifies the
 control wire.</p>
 <p>With the solution states marked, these amplitudes are amplified so
-that these states are more likely to be measured than other non-solution
+that solution states are more likely to be measured than other non-solution
 states. This can be achieved by adding:</p>
-<pre><code class="language-rust ignore">circuit.add_repeating_gate(StandardGate::H, vec![0, 1, 2]).unwrap();
-circuit.add_repeating_gate(StandardGate::X, vec![0, 1, 2]).unwrap();
+<pre><code class="language-rust ignore">circuit.add_repeating_gate(Gate::H, &amp;[0, 1, 2]).unwrap()
+    .add_repeating_gate(Gate::X, &amp;[0, 1, 2]).unwrap();
 
 // CC-Z gate
-circuit.add_gate(StandardGate::H, 2).unwrap();
-circuit.add_gate(StandardGate::Toffoli(0, 1), 2).unwrap();
-circuit.add_gate(StandardGate::H, 2).unwrap();
+circuit.add_gate(Gate::H, 2).unwrap()
+    .add_gate(Gate::Toffoli(0, 1), 2).unwrap()
+    .add_gate(Gate::H, 2).unwrap();
 
-circuit.add_repeating_gate(StandardGate::X, vec![0, 1, 2]).unwrap();
-circuit.add_repeating_gate(StandardGate::H, vec![0, 1, 2]).unwrap();</code></pre>
+circuit.add_repeating_gate(Gate::X, &amp;[0, 1, 2]).unwrap()
+    .add_repeating_gate(Gate::H, &amp;[0, 1, 2]).unwrap();</code></pre>
 <p>This completes the construction of Grover's algorithm. To make sure that
 the gates are placed correctly, run the printing code as shown before.
 Once checked that it's correct, the circuit can be simulated by calling</p>
@@ -258,7 +259,7 @@ observed states. This bin count can be found and printed with</p>
 <pre><code class="language-rust ignore">if let Measurement::Observable(bin_count) = circuit.repeat_measurement(500).unwrap() {
     // bin_count is a HashMap&lt;ProductState, usize&gt;
     for (state, count) in bin_count {
-        println!(&quot;{} : {}&quot;, state.as_str(), count);
+        println!(&quot;{} : {}&quot;, state.to_string(), count);
     }
 }</code></pre>
 <p>The above prints the number of times each state was observed over 500
@@ -272,45 +273,64 @@ useful to view this &quot;theoretical&quot; superposition:</p>
 <pre><code class="language-rust ignore">if let Measurement::NonObservable(output_super_position) = circuit.get_superposition().unwrap() 
 {
     for (state, amplitude) in super_position.into_iter() {
-        println!(&quot;{} : {}&quot;, state.as_string(), amplitude);
+        println!(&quot;{} : {}&quot;, state.to_string(), amplitude);
     }
 }</code></pre>
 <p>This completes the construction and measurement of a three qubit
 Grover's circuit. Other functions (which include examples in their
-documentation) can add gates in other ways.</p>
-<p>The following is the completed code. This can be copied directly to your
-<code>main.rs</code> and ran with <code>cargo run</code>. Make sure that quantr is added as a
-dependency.</p>
-<pre><code class="language-rust ignore">use quantr::circuit::{printer::Printer, Circuit, Measurement, StandardGate};
+documentation) can add gates in other ways. Moreover, custom gates can
+be built, which can be seen in examples <code>examples/qft.rs</code> and
+<code>examples/custom_gate.rs</code>.</p>
+<p>To improve the readability of this code, the numerous <code>unwrap()</code> calls
+can be removed while the main function declaration can be edited like
+so:</p>
+<pre><code class="language-rust ignore">...
+use quantr::QuantrError;
+
+fn main() -&gt; Result&lt;(), QuantrError&gt; {
+    ...; 
+    Ok(()) 
+}</code></pre>
+<p>A <code>Ok(())</code> is returned on the last line; signalling that the program has
+exited without errors. Then, effectively all unwrap methods called after
+appending gates can be replaced with a <code>?</code>. However, an argument for
+leaving the unwraps explicit is that if a function has appended a gate
+resulting in an error, such as adding a gate out width the circuit's
+size, then at runtime the program will panic and return a compiler
+message explicitly directing the user to the line in question. Even
+though the many unwraps may be unpleasant, it can be beneficial for
+debugging while creating the circuit.</p>
+<p>The following is the completed code. This can also be found in
+<code>examples/grovers.rs</code>, and ran with <code>cargo run --example grovers</code> from
+the root directory.</p>
+<pre><pre class="playground"><code class="language-rust">use quantr::{Circuit, Gate, Measurement, Printer};
 
 fn main() {
     let mut circuit = Circuit::new(3).unwrap();
 
     // Kick state into superposition of equal weights
     circuit
-        .add_repeating_gate(StandardGate::H, vec![0, 1, 2])
+        .add_repeating_gate(Gate::H, &amp;[0, 1, 2])
         .unwrap();
 
     // Oracle
-    circuit.add_gate(StandardGate::CZ(1), 0).unwrap();
+    circuit.add_gate(Gate::CZ(1), 0).unwrap();
 
     // Amplitude amplification
     circuit
-        .add_repeating_gate(StandardGate::H, vec![0, 1, 2])
-        .unwrap();
-    circuit
-        .add_repeating_gate(StandardGate::X, vec![0, 1, 2])
+        .add_repeating_gate(Gate::H, &amp;[0, 1, 2])
+        .unwrap()
+        .add_repeating_gate(Gate::X, &amp;[0, 1, 2])
         .unwrap();
 
-    circuit.add_gate(StandardGate::H, 2).unwrap();
-    circuit.add_gate(StandardGate::Toffoli(0, 1), 2).unwrap();
-    circuit.add_gate(StandardGate::H, 2).unwrap();
+    circuit.add_gate(Gate::H, 2).unwrap()
+        .add_gate(Gate::Toffoli(0, 1), 2).unwrap()
+        .add_gate(Gate::H, 2).unwrap();
 
     circuit
-        .add_repeating_gate(StandardGate::X, vec![0, 1, 2])
-        .unwrap();
-    circuit
-        .add_repeating_gate(StandardGate::H, vec![0, 1, 2])
+        .add_repeating_gate(Gate::X, &amp;[0, 1, 2])
+        .unwrap()
+        .add_repeating_gate(Gate::H, &amp;[0, 1, 2])
         .unwrap();
 
     // Prints the circuit in UTF-8
@@ -326,9 +346,9 @@ fn main() {
     // Displays bin count of the resulting 500 repeat measurements of
     // superpositions. bin_count is a HashMap&lt;ProductState, usize&gt;.
     if let Measurement::Observable(bin_count) = circuit.repeat_measurement(500).unwrap() {
-        println!(&quot;[Observable] Bin count of observed states.&quot;);
+        println!(&quot;\n[Observable] Bin count of observed states.&quot;);
         for (state, count) in bin_count {
-            println!(&quot;|{}&gt; observed {} times&quot;, state.as_string(), count);
+            println!(&quot;|{}&gt; observed {} times&quot;, state.to_string(), count);
         }
     }
 
@@ -337,10 +357,10 @@ fn main() {
     {
         println!(&quot;\n[Non-Observable] The amplitudes of each state in the final superposition.&quot;);
         for (state, amplitude) in output_super_position.into_iter() {
-            println!(&quot;|{}&gt; : {}&quot;, state.as_string(), amplitude);
+            println!(&quot;|{}&gt; : {}&quot;, state.to_string(), amplitude);
         }
     }
-}</code></pre>
+}</code></pre></pre>
 
                     </main>
 
