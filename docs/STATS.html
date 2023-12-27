@@ -3,8 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>The Quantr Book</title>
-        <meta name="robots" content="noindex" />
+        <title>Performance - The Quantr Book</title>
 
 
         <!-- Custom HTML head -->
@@ -84,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="QUICK_START.html">Quick Start Guide</a></li><li class="chapter-item expanded affix "><a href="STATS.html">Performance</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="QUICK_START.html">Quick Start Guide</a></li><li class="chapter-item expanded affix "><a href="STATS.html" class="active">Performance</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -167,201 +166,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
-<p>This book only contains the quick start guide from <a href="https://github.com/a-barlow/quantr">quantr's
-repository</a> and a note on memory
-performance. In the future, it will serve as extended documentation to
-quantr, in addition to explaining the theory and logic behind the crate.</p>
-<p>This documentation is for quantr-0.4.0.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="quick-start-guide"><a class="header" href="#quick-start-guide">Quick Start Guide</a></h1>
-<p>This guide walks through an implementation of Grover's algorithm using
-<a href="https://crates.io/crates/quantr">quantr</a>. It's aimed at beginners in
-Rust and requires a little knowledge of the console. Moreover,
-it's assumed that <a href="https://doc.rust-lang.org/stable/book/ch01-00-getting-started.html">Rust and Cargo are
-installed</a>.</p>
-<p>A good starting point to learn Rust is <a href="https://doc.rust-lang.org/stable/book/title-page.html">The Rust
-Book</a>. Likewise,
-<a href="https://qiskit.org/ecosystem/algorithms/tutorials/06_grover.html">Qiskit</a>
-offers a good explanation of Grover's. This guide does not attempt to
-explain either of these subjects in detail.</p>
-<p>The complete code that is built from following this guide is available
-at the end. Or, the code can be found in <code>examples/grovers.rs</code>, and ran
-from the root directory with <code>cargo run --example grovers</code>.</p>
-<hr />
-<p>Open the console, and create a new Rust project (known as a cargo
-package) by running</p>
-<pre><code class="language-console">cargo new grovers_example
-</code></pre>
-<p>This will create a new directory called <code>grovers_example</code> containing
-the necessary files for a Rust project. Enter this directory.</p>
-<p>Add the latest version of quantr as a dependency by running <code>cargo add quantr</code> on the console. This should add quantr below <code>[d    ependecies]</code> in
-you <code>Cargo.toml</code> file. Then, run <code>cargo build</code>. This will download the
-quantr crate from <a href="https://crates.io/">crates.io</a> and make it
-accessible for your project. </p>
-<p>Once quantr has been installed, open <code>src/main.rs</code>. This is where the
-subsequent code will be written to implement Grover's algorithm.</p>
-<p>Add the following lines to the top of <code>main.rs</code>, and before <code>fn main()</code>:</p>
-<pre><code class="language-rust  ignore">use quantr::{Circuit, Gate, Measurement, Printer};</code></pre>
-<p>These lines import the structs and enums that will be used throughout 
-this guide.</p>
-<p>Rust begins execution of the program by calling the <code>main()</code> function.
-So, the rest of the code will be inserted into this function. Let's
-first initialise a three qubit circuit:</p>
-<pre><code class="language-rust ignore">let mut circuit: Circuit = Circuit::new(3).unwrap();</code></pre>
-<p>Grover's algorithm requires that the starting state is in a 
-superposition of all basis states with equal amplitudes. This can be
-achieved by adding a Hadamard gate to each wire, that is to wires 0, 1
-and 2:</p>
-<pre><code class="language-rust ignore">circuit.add_repeating_gate(Gate::H, &amp;[0, 1, 2]).unwrap();</code></pre>
-<p>The <code>.unwrap()</code> forces the program to quit if there is an error in
-adding these gates, such as adding a gate to a non-existent wire. There
-are no errors in this example, so the method <code>.unwrap()</code> does nothing. </p>
-<p>Let's visualise the circuit that has been built so far (or at any other
-time throughout this guide) by adding the following:</p>
-<pre><code class="language-rust ignore">let mut printer: Printer = Printer::new(&amp;circuit);
-printer.print_diagram();</code></pre>
-<p>This will print a circuit diagram to the console. This can be seen by
-running the program by entering <code>cargo run</code> while in the directory that
-cargo built.</p>
-<p>The next step in the algorithm requires the oracle to be defined. This
-is a function built from unitary gates that flips the sign of the state
-that corresponds to a 'solution' of the searching function. In this
-example, the states |110&gt; and |111&gt; are chosen to be the solution
-states.</p>
-<p>This is implemented by adding a controlled-z gate targeting the 0th
-wire, with its control node placed on the 1st wire; the first and second
-wire from top to bottom in a circuit diagram respectively:</p>
-<pre><code class="language-rust ignore">circuit.add_gate(Gate::CZ(1), 0).unwrap();</code></pre>
-<p>The second argument of <code>circuit.add_gate</code> specifies which wire is the
-target, and the field of the variant <code>Gate::CZ</code> specifies the
-control wire.</p>
-<p>With the solution states marked, these amplitudes are amplified so
-that solution states are more likely to be measured than other non-solution
-states. This can be achieved by adding:</p>
-<pre><code class="language-rust ignore">circuit.add_repeating_gate(Gate::H, &amp;[0, 1, 2]).unwrap()
-    .add_repeating_gate(Gate::X, &amp;[0, 1, 2]).unwrap();
-
-// CC-Z gate
-circuit.add_gate(Gate::H, 2).unwrap()
-    .add_gate(Gate::Toffoli(0, 1), 2).unwrap()
-    .add_gate(Gate::H, 2).unwrap();
-
-circuit.add_repeating_gate(Gate::X, &amp;[0, 1, 2]).unwrap()
-    .add_repeating_gate(Gate::H, &amp;[0, 1, 2]).unwrap();</code></pre>
-<p>This completes the construction of Grover's algorithm. To make sure that
-the gates are placed correctly, run the printing code as shown before.
-Once checked that it's correct, the circuit can be simulated by calling</p>
-<pre><code class="language-rust ignore">circuit.simulate();</code></pre>
-<p>This effectively attaches the |000&gt; register to the circuit, resulting
-in a superposition that can be measured. As usual, the superposition can
-be prepared and measured multiple times to collect a bin count of
-observed states. This bin count can be found and printed with</p>
-<pre><code class="language-rust ignore">if let Ok(Measurement::Observable(bin_count)) = circuit.repeat_measurement(500) {
-    // bin_count is a HashMap&lt;ProductState, usize&gt;
-    for (state, count) in bin_count {
-        println!(&quot;{} : {}&quot;, state.to_string(), count);
-    }
-}</code></pre>
-<p>The above prints the number of times each state was observed over 500
-measurements. In this situation, the amplitude amplification results in
-a superposition of two states: |110&gt; and |111&gt;.</p>
-<p>Note that the above code is explicit in showing that the measurements
-are <em>physically possible</em>. This is to distinguish from other data that
-can be taken from circuit, such as the resulting superposition itself.
-In nature, this cannot be directly observed. However, it can still be
-useful to view this &quot;theoretical&quot; superposition:</p>
-<pre><code class="language-rust ignore">if let Ok(Measurement::NonObservable(output_super_position)) = circuit.get_superposition() 
-{
-    for (state, amplitude) in super_position.into_iter() {
-        println!(&quot;{} : {}&quot;, state.to_string(), amplitude);
-    }
-}</code></pre>
-<p>This completes the construction and measurement of a three qubit
-Grover's circuit. Other functions (which include examples in their
-documentation) can add gates in other ways. Moreover, custom gates can
-be built, which can be seen in examples <code>examples/qft.rs</code> and
-<code>examples/custom_gate.rs</code>.</p>
-<p>To improve the readability of this code, the numerous <code>unwrap()</code> calls
-can be removed while the main function declaration can be edited like
-so:</p>
-<pre><code class="language-rust ignore">...
-use quantr::QuantrError;
-
-fn main() -&gt; Result&lt;(), QuantrError&gt; {
-    ...; 
-    Ok(()) 
-}</code></pre>
-<p>A <code>Ok(())</code> is returned on the last line; signalling that the program has
-exited without errors. Then, effectively all unwrap methods called after
-appending gates can be replaced with a <code>?</code>. However, an argument for
-leaving the unwraps explicit is that if a function has appended a gate
-resulting in an error, such as adding a gate out width the circuit's
-size, then at runtime the program will panic and return a compiler
-message explicitly directing the user to the line in question. Even
-though the many unwraps may be unpleasant, it can be beneficial for
-debugging while creating the circuit.</p>
-<p>The following is the completed code. This can also be found in
-<code>examples/grovers.rs</code>, and ran with <code>cargo run --example grovers</code> from
-the root directory.</p>
-<pre><code class="language-rust  ignore">use quantr::{Circuit, Gate, Measurement, Printer};
-
-fn main() {
-    let mut circuit = Circuit::new(3).unwrap();
-
-    // Kick state into superposition of equal weights
-    circuit
-        .add_repeating_gate(Gate::H, &amp;[0, 1, 2])
-        .unwrap();
-
-    // Oracle
-    circuit.add_gate(Gate::CZ(1), 0).unwrap();
-
-    // Amplitude amplification
-    circuit
-        .add_repeating_gate(Gate::H, &amp;[0, 1, 2])
-        .unwrap()
-        .add_repeating_gate(Gate::X, &amp;[0, 1, 2])
-        .unwrap();
-
-    circuit.add_gate(Gate::H, 2).unwrap()
-        .add_gate(Gate::Toffoli(0, 1), 2).unwrap()
-        .add_gate(Gate::H, 2).unwrap();
-
-    circuit
-        .add_repeating_gate(Gate::X, &amp;[0, 1, 2])
-        .unwrap()
-        .add_repeating_gate(Gate::H, &amp;[0, 1, 2])
-        .unwrap();
-
-    // Prints the circuit in UTF-8
-    let mut printer = Printer::new(&amp;circuit);
-    printer.print_diagram();
-
-    // Un-commenting the line below will print the progress of the simulation
-    // circuit.toggle_simulation_progress();
-
-    // Simulates the circuit
-    circuit.simulate();
-
-    // Displays bin count of the resulting 500 repeat measurements of
-    // superpositions. bin_count is a HashMap&lt;ProductState, usize&gt;.
-    if let Ok(Measurement::Observable(bin_count)) = circuit.repeat_measurement(500) {
-        println!(&quot;\n[Observable] Bin count of observed states.&quot;);
-        for (state, count) in bin_count {
-            println!(&quot;|{}&gt; observed {} times&quot;, state.to_string(), count);
-        }
-    }
-
-    // Returns the superpsoition that cannot be directly observed.
-    if let Ok(Measurement::NonObservable(output_super_position)) = circuit.get_superposition()
-    {
-        println!(&quot;\n[Non-Observable] The amplitudes of each state in the final superposition.&quot;);
-        for (state, amplitude) in output_super_position.into_iter() {
-            println!(&quot;|{}&gt; : {}&quot;, state.to_string(), amplitude);
-        }
-    }
-}</code></pre>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="performance-of-quantr"><a class="header" href="#performance-of-quantr">Performance of Quantr</a></h1>
+                        <h1 id="performance-of-quantr"><a class="header" href="#performance-of-quantr">Performance of Quantr</a></h1>
 <p>The main optimisation goal for quantr is to minimise the size of the
 memory allocation required for simulating circuits. Naturally, quantum
 circuit simulators will have an inherent limitation due to the
@@ -414,13 +219,13 @@ consumption of these circuits. Then the register could be increased and
 the average measurement can be taken again. However, I believe the
 memory required would not differ too much, and the initial testing above
 gives a good indication to quantr's performance. </p>
-<p>The code that produced the data can be found in the <a href="STATS.html#appendix">appendix</a>.</p>
+<p>The code that produced the data can be found in the <a href="#appendix">appendix</a>.</p>
 <h2 id="speed"><a class="header" href="#speed">Speed</a></h2>
 <p>The speed of quantr has been untested, and as of quantr-0.4.0, has not
 been optimised in this respect. Only after further releases will this
 crate be tested for speed.</p>
 <h2 id="appendix"><a class="header" href="#appendix">Appendix</a></h2>
-<p>Code for obtaining the data in the plot found in the <a href="STATS.html#memory">memory section</a>:</p>
+<p>Code for obtaining the data in the plot found in the <a href="#memory">memory section</a>:</p>
 <pre><code class="language-rust  ignore">use std::alloc;
 use cap::Cap;
 use quantr::{Circuit, Printer, Gate, QuantrError, states::*};
@@ -492,6 +297,9 @@ fn main() -&gt; Result&lt;(), QuantrError&gt;{
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="QUICK_START.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
 
 
                         <div style="clear: both"></div>
@@ -500,6 +308,9 @@ fn main() -&gt; Result&lt;(), QuantrError&gt;{
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="QUICK_START.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
 
             </nav>
 
@@ -523,11 +334,6 @@ fn main() -&gt; Result&lt;(), QuantrError&gt;{
 
         <!-- Custom JS scripts -->
 
-        <script>
-        window.addEventListener('load', function() {
-            window.setTimeout(window.print, 100);
-        });
-        </script>
 
     </div>
     </body>

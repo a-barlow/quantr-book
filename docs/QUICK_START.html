@@ -83,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="QUICK_START.html" class="active">Quick Start Guide</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="QUICK_START.html" class="active">Quick Start Guide</a></li><li class="chapter-item expanded affix "><a href="STATS.html">Performance</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -249,7 +249,7 @@ Once checked that it's correct, the circuit can be simulated by calling</p>
 in a superposition that can be measured. As usual, the superposition can
 be prepared and measured multiple times to collect a bin count of
 observed states. This bin count can be found and printed with</p>
-<pre><code class="language-rust ignore">if let Measurement::Observable(bin_count) = circuit.repeat_measurement(500).unwrap() {
+<pre><code class="language-rust ignore">if let Ok(Measurement::Observable(bin_count)) = circuit.repeat_measurement(500) {
     // bin_count is a HashMap&lt;ProductState, usize&gt;
     for (state, count) in bin_count {
         println!(&quot;{} : {}&quot;, state.to_string(), count);
@@ -263,7 +263,7 @@ are <em>physically possible</em>. This is to distinguish from other data that
 can be taken from circuit, such as the resulting superposition itself.
 In nature, this cannot be directly observed. However, it can still be
 useful to view this &quot;theoretical&quot; superposition:</p>
-<pre><code class="language-rust ignore">if let Measurement::NonObservable(output_super_position) = circuit.get_superposition().unwrap() 
+<pre><code class="language-rust ignore">if let Ok(Measurement::NonObservable(output_super_position)) = circuit.get_superposition() 
 {
     for (state, amplitude) in super_position.into_iter() {
         println!(&quot;{} : {}&quot;, state.to_string(), amplitude);
@@ -296,7 +296,7 @@ debugging while creating the circuit.</p>
 <p>The following is the completed code. This can also be found in
 <code>examples/grovers.rs</code>, and ran with <code>cargo run --example grovers</code> from
 the root directory.</p>
-<pre><pre class="playground"><code class="language-rust">use quantr::{Circuit, Gate, Measurement, Printer};
+<pre><code class="language-rust  ignore">use quantr::{Circuit, Gate, Measurement, Printer};
 
 fn main() {
     let mut circuit = Circuit::new(3).unwrap();
@@ -338,7 +338,7 @@ fn main() {
 
     // Displays bin count of the resulting 500 repeat measurements of
     // superpositions. bin_count is a HashMap&lt;ProductState, usize&gt;.
-    if let Measurement::Observable(bin_count) = circuit.repeat_measurement(500).unwrap() {
+    if let Ok(Measurement::Observable(bin_count)) = circuit.repeat_measurement(500) {
         println!(&quot;\n[Observable] Bin count of observed states.&quot;);
         for (state, count) in bin_count {
             println!(&quot;|{}&gt; observed {} times&quot;, state.to_string(), count);
@@ -346,14 +346,14 @@ fn main() {
     }
 
     // Returns the superpsoition that cannot be directly observed.
-    if let Measurement::NonObservable(output_super_position) = circuit.get_superposition().unwrap()
+    if let Ok(Measurement::NonObservable(output_super_position)) = circuit.get_superposition()
     {
         println!(&quot;\n[Non-Observable] The amplitudes of each state in the final superposition.&quot;);
         for (state, amplitude) in output_super_position.into_iter() {
             println!(&quot;|{}&gt; : {}&quot;, state.to_string(), amplitude);
         }
     }
-}</code></pre></pre>
+}</code></pre>
 
                     </main>
 
@@ -363,6 +363,9 @@ fn main() {
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
+                            <a rel="next" href="STATS.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -374,6 +377,9 @@ fn main() {
                         <i class="fa fa-angle-left"></i>
                     </a>
 
+                    <a rel="next" href="STATS.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>
