@@ -3,5 +3,6 @@
 !/docs/*
 !/src/
 !/src/*
+!.git_commit_template.txt
 !/README.md 
 !/LICENCE.txt
